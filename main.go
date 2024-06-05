@@ -79,7 +79,7 @@ func main() {
 			Name:    os.Getenv("CLOUDFLARE_RECORD_NAME"),
 			Content: ip,
 			TTL:     1,
-			Proxied: cloudflare.BoolPtr(true),
+			Proxied: cloudflare.BoolPtr(false), // Disable Cloudflare proxy, this exposes the origin IP address so use with caution
 			Comment: "Custom DDNS",
 		})
 		if err != nil {
