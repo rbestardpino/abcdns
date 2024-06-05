@@ -79,7 +79,7 @@ func main() {
 			Name:    os.Getenv("CLOUDFLARE_RECORD_NAME"),
 			Content: ip,
 			TTL:     1,
-			Proxied: cloudflare.BoolPtr(false), // Disable Cloudflare proxy, this exposes the origin IP address so use with caution
+			Proxied: cloudflare.BoolPtr(false),
 			Comment: "Custom DDNS",
 		})
 		if err != nil {
@@ -105,6 +105,7 @@ func main() {
 			newRec, err := api.UpdateDNSRecord(ctx, zoneIdentifier, cloudflare.UpdateDNSRecordParams{
 				Content: ip,
 				ID:      rec.ID,
+				Proxied: cloudflare.BoolPtr(false),
 			})
 			if err != nil {
 				log.Fatalf("ERR UPDATING DNS RECORD: %s", err)
