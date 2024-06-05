@@ -20,16 +20,20 @@ type IP struct {
 }
 
 const ENV_FILE_PATH = ".env"
-const CRON_SCHEDULE = "@every 30s"
 
 func main() {
+
+	registerHealthCheckEndpoint()
+
 	if fileExists(ENV_FILE_PATH) {
+		log.Println("LOADING ENV FILE")
 		err := godotenv.Load(ENV_FILE_PATH)
 		if err != nil {
 			log.Fatalf("ERR LOADING ENV FILE: %s", err.Error())
 		}
 	}
 
+	log.Println("CREATING CLOUDFLARE API CLIENT")
 	api, err := cloudflare.NewWithAPIToken(os.Getenv("CLOUDFLARE_API_TOKEN"))
 	if err != nil {
 		log.Fatalf("ERR CREATING CLOUDFLARE API CLIENT: %s", err)
@@ -45,9 +49,15 @@ func main() {
 		log.Fatalf("ERR CLOUDFLARE_RECORD_NAME ENV VAR NOT SET")
 	}
 
+	cronSchedule := os.Getenv("CRON_SCHEDULE")
+	if cronSchedule == "" {
+		log.Fatalf("ERR CRON_SCHEDULE ENV VAR NOT SET")
+	}
+
 	ctx := context.Background()
 	zoneIdentifier := cloudflare.ZoneIdentifier(zoneID)
 
+	log.Println("RUNNING INITIAL DNS RECORD CHECK")
 	recs, _, err := api.ListDNSRecords(ctx, zoneIdentifier, cloudflare.ListDNSRecordsParams{
 		Type: "A",
 		Name: cloudflareRecordName,
@@ -83,7 +93,8 @@ func main() {
 	}
 
 	c := cron.New()
-	c.AddFunc(CRON_SCHEDULE, func() {
+	c.AddFunc(cronSchedule, func() {
+		log.Println("RUNNING CRON JOB")
 		ip, err := getPublicIP()
 		if err != nil {
 			log.Fatalf("ERR GETTING PUBLIC IP: %s", err)
@@ -127,4 +138,12 @@ func getPublicIP() (string, error) {
 func fileExists(filePath string) bool {
 	_, error := os.Stat(filePath)
 	return !errors.Is(error, os.ErrNotExist)
+}
+
+func registerHealthCheckEndpoint() {
+	log.Println("REGISTERING HEALTH CHECK ENDPOINT at localhost:8080/health")
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	go http.ListenAndServe(":8080", nil)
 }
