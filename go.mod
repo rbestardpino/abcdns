@@ -3,7 +3,7 @@ module abcdns
 go 1.22.3
 
 require (
-	github.com/cloudflare/cloudflare-go v0.96.0
+	github.com/cloudflare/cloudflare-go v0.97.0
 	github.com/joho/godotenv v1.5.1
 	github.com/robfig/cron/v3 v3.0.1
 )
